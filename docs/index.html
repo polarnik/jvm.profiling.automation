@@ -490,7 +490,7 @@
 		<h2>Из <b>SJK</b> (<b>hh</b>) в InfluxDB</h2>
 		<h3>Пример вывода команды <b>hh</b></h3>
 		<pre>
-			<code>> java -jar sjk.jar hh --live --pid $PID</code>
+			<code>> <mark>sudo -u user</mark> <mark class="green">$JAVA</mark> -jar sjk.jar hh --pid <mark class="green">$PID</mark></code>
 			<code>   #   Instances       Bytes  Type</code>
 			<code>   1:      30000     3330000  [C</code>
 			<code>   2:      40000      220000  java.lang.String</code>
@@ -681,10 +681,10 @@
 		<pre>
 			<code>while [ -n <mark class="green">$PID</mark> ]</code>
 			<code>do</code>
-			<code>   $java -jar sjk.jar hh --live --pid $PID <mark>|</mark> \</code>
-			<code>   awk   -v app=JMeter -v n=30 -f sjk.hh.2.influx.awk <mark>|</mark> \</code>
-			<code>   curl  -i -XPOST http://influxHost:8086/write?db=sjk  \</code>
-			<code>         --data-binary @-</code>
+			<code>   sudo -u user $java -jar sjk.jar hh --live --pid $PID <mark>|</mark> \</code>
+			<code>   awk  -v app=JMeter -v n=30 -f sjk.hh.2.influx.awk <mark>|</mark> \</code>
+			<code>   curl -i -XPOST http://influxHost:8086/write?db=sjk  \</code>
+			<code>        --data-binary @-</code>
 			<code>   <mark>sleep 30.0</mark></code>
 			<code>   <mark class="green">PID</mark>=`pgrep -f "^java .*-jar ApacheJMeter"`</code>
 			<code>done</code>
