@@ -107,23 +107,12 @@
 		</figure>
 	</div></section>	
 
-	<section class="slide"><div>
-		<h2>Нисходящий процесс анализа</h2>
-		<ul>
-			<li>Высокая утилизация <b>CPU</b></li>
-			<li>Много <b>%user</b>, %sys, %iowait, %idle, ...</li>
-			<li>Наш Java-процесс потребляет <b>%user</b>, %sys, ...</li>
-		</ul>
-		<figure>
-			<img class="place bottom center"
-				style="height:55%; margin: 20px 0px 50px 0"
-				src="images/grafana.CPU.png">
-		</figure>	
-	</div></section>	
-
 	<section class="clear slide"><div>
 		<figure>
-			<img class="w cover" src="images/grafana.CPU.png">
+			<img class="w cover" src="images/forest.jpg">
+			<figcaption class="copyright right white">
+				© <a href="https://turbaza.ru/kabardino-balkarskaya-respublika/id961/">Отель «Sky-Эльбрус»</a>
+			</figcaption>
 		</figure>
 	</div></section>
 
@@ -138,6 +127,55 @@
 
 	<section class="slide"><div>
 		<h2>Нисходящий процесс анализа</h2>
+		<h3>Системные метрики</h3>
+		<ul>
+			<li>Высокая утилизация <b>CPU</b></li>
+			<li>Много <b>%user</b>, %sys, %iowait, %idle, ...</li>
+			<li>Наш Java-процесс потребляет <b>%user</b>, %sys, ...</li>
+		</ul>
+		<figure>
+			<img class="place bottom center"
+				style="height:35%; margin: 20px 0px 50px 0"
+				src="images/grafana.CPU.png">
+		</figure>	
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Системные метрики</h2>
+		<h3>Процессор, память</h3>
+		<figure>
+			<img class="w cover place bottom center" 
+				src="images/grafana.CPU.png">		
+		</figure>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Нисходящий процесс анализа</h2>
+		<h3>Метрики MBeans</h3>
+		<ul>
+			<li>Размер <b>HEAP</b></li>
+			<li>Количество <b>классов</b>, потоков, ...</li>
+			<li>Работа сборщика мусора, <b>количество сборок</b>, ...</li>
+		</ul>
+		<figure>
+			<img class="place bottom center"
+				style="height:35%; margin: 20px 0px 50px 0"
+				src="images/heap.png">
+		</figure>	
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Метрики MBeans</h2>
+		<h3>Размер HEAP</h3>
+		<figure>
+			<img class="w cover place bottom center" 
+				src="images/heap.png">		
+		</figure>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Нисходящий процесс анализа</h2>
+		<h3>Профилирование JVM</h3>
 		<ul>
 			<li>Java-потоки с именем <b><u>Thread-*</u></b> потребляют <b>CPU</b>, память</li>
 			<li>Модуль <b><u>ru.raiffeisen.report</u></b> потребляет <b>CPU</b>, память</li>
@@ -146,7 +184,7 @@
 		</ul>		
 		<figure>
 			<img class="place bottom center"
-				style="height:25%; margin: 20px 0px 50px 0"
+				style="height:35%; margin: 20px 0px 50px 0"
 				src="images/Monitoring.Sampler.HTTP.X.7.SJK.2.png">				
 		</figure>		
 	</div></section>	
@@ -626,11 +664,12 @@
 		Total.Count=92000, Total.Bytes=3711111
 	</div></section>
 
+<!--
 	<section class="clear yellow slide"><div>
 		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
 			Из <b>SJK</b> (<b>stcap</b> + <b>ssa</b>) в InfluxDB</span></h2>
 	</div></section>
-
+-->
 	<section class="clear yellow slide"><div>
 		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
 			Запустить <b>SJK</b>, используя <b>bash</b></span></h2>
@@ -707,6 +746,9 @@
 		<figure>
 			<iframe width="560" height="315" src="https://www.youtube.com/embed/iOrH8QtxYQ8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
+			<img style="float: right;"  width="315" height="315"
+				src="images/qrcode.png">
+
 		</figure>
 				<a href="https://youtu.be/iOrH8QtxYQ8">youtu.be</a>,
 				<a href="https://snapshot.raintank.io/dashboard/snapshot/Z14um64K8svrWOWQl3M7yX0hdKdrM1fj?orgId=2">snapshot.raintank.io</a>		
@@ -740,11 +782,28 @@
 	</div></section>
 -->
 	<section class="clear green slide"><div>
-		<h2 class="small shout">Профилирование помогает находить дефекты</h2>
+		<h2 class="small shout">Профилирование помогает находить дефекты<br>
+			<a href="https://github.com/akka/alpakka/issues/1837">https://github.com/akka/alpakka/issues/1837</a></h2>
 	</div></section>
 
 	<section class="clear green slide"><div>
 		<h2 class="small shout">Тренды упрощают процесс исправления дефектов</h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<figure>
+			<img class="w h cover place center" 
+				src="images/trends.png">		
+		</figure>
+	</div></section>
+
+	<section class="clear slide"><div>
+		<figure>
+			<img class="w cover" src="images/speleologia.jpg">
+			<figcaption class="copyright right white">
+				© <a href="http://galerija.speleo.lt/v/fotokonkursai/metu_nuotrauka_2013/zmogusirurvas/02_03.jpg.html">Подземная роскошь (Петр Якубсон)</a>
+			</figcaption>
+		</figure>
 	</div></section>
 
 	<section class="clear green slide"><div>
