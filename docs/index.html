@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<title>Автоматизация профилирования JVM</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="shower/themes/material/styles/styles.css">
+	<link rel="stylesheet" href="styles/style.css">
+
+    <style>
+        .shower {
+            --slide-ratio: calc(16 / 9);
+            --slide-width: 1280px;
+            --color-key: #ffcc00;
+            --color-yellow: #ffcc00;
+        }
+    </style>	
+</head>
+<body class="shower list">
+
+	<header class="caption">
+		<h1>Автоматизация профилирования JVM</h1>
+		<p><a href="https://polarnik.github.io">Вячеслав Смирнов</a>, <a href="https://www.raiffeisen.ru/">Райффайзенбанк</a></p>
+	</header>
+
+	<section class="clear slide" id="title"><div>
+		<h2>Автоматизация<br>профилирования<br><b>JVM</b></h2>
+		<p>Вячеслав Смирнов</p>
+		<p>Эксперт по тестированию,<br>Райффайзенбанк</p>
+		<img class="w cover" src="images/hb-bg.png">
+		<img class="w h cover" src="images/hb-bg.2.png">
+		<style>
+			#title h2 {
+				position: relative;
+				top: calc(var(--slide-height) / 10);
+				left: calc(var(--slide-width) / 4);
+				font-size: calc(var(--slide-height) / 12);
+			}
+			#title p {
+				position: relative;
+				top: 150px;
+				left: calc(var(--slide-width) / 4);
+				font-size: calc(var(--slide-height) / 20);
+				line-height: calc(var(--slide-height) / 15);
+			}
+			#title div div {
+				width: 250px;
+				height: 250px;
+				position: relative;
+				top: -120px;
+				left: 575px;
+				background: #A6CE38;
+				background: red;
+				border-radius: 50%;
+				white-space: nowrap;
+				text-align: center;
+			}
+			#title div div span {
+				display: inline-block;
+				height: 100%;
+				vertical-align: middle;
+			}
+			#title div div img {
+				z-index: auto;
+				vertical-align: middle;
+				position: static;
+			}
+		</style>
+	</div></section>
+
+	<section class="clear slide"><div>
+		<h2>Ускоряю сервисы <br>Raiffeisen Business Platform</h2>
+		<figure>
+			<img class="w cover" src="images/omsk.jpg">
+		</figure>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Доклад о профилировании Java</h2>
+		Из опыта 2018-2019 года по оптимизации микросервисов:
+		<ul>
+			<li>аутентификации</li>
+			<li>выписок</li>
+			<li>печати выписок</li>
+		</ul>
+		созданных с помощью:
+		<ul>
+			<li>OpenJDK 1.8.0, Java 1.8.0</li>
+			<li>Scala</li>
+			<li>Play Framework, Akka, Alpakka</li>
+			<li>IBM.MQ, RabbitMQ, PostgreSQL</li>
+		</ul>
+	</div></section>
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout">Подготовлен <b>demo-репозиторий</b> на <b>github.com</b><br/>
+			<span class="next">с профилированием <b>Apache.JMeter</b></span></h2>
+	</div></section>
+
+	<section class="clear slide"><div>
+		<figure>
+			<img class="w cover" src="images/elbrus.jpg">
+			<figcaption class="copyright right white">
+				© <a href="https://mg5642.livejournal.com/56565.html">100 вершин Кавказа. Номер 1 — Эльбрус! (Михаил Голубев)</a>
+			</figcaption>
+		</figure>
+	</div></section>	
+
+	<section class="slide"><div>
+		<h2>Нисходящий процесс анализа</h2>
+		<ul>
+			<li>Высокая утилизация <b>CPU</b></li>
+			<li>Много <b>%user</b>, %sys, %iowait, %idle, ...</li>
+			<li>Наш Java-процесс потребляет <b>%user</b>, %sys, ...</li>
+		</ul>
+		<figure>
+			<img class="place bottom center"
+				style="height:55%; margin: 20px 0px 50px 0"
+				src="images/grafana.CPU.png">
+		</figure>	
+	</div></section>	
+
+	<section class="clear slide"><div>
+		<figure>
+			<img class="w cover" src="images/grafana.CPU.png">
+		</figure>
+	</div></section>
+
+	<section class="clear slide"><div>
+		<figure>
+			<img class="w cover" src="images/speleologia.jpg">
+			<figcaption class="copyright right white">
+				© <a href="http://galerija.speleo.lt/v/fotokonkursai/metu_nuotrauka_2013/zmogusirurvas/02_03.jpg.html">Подземная роскошь (Петр Якубсон)</a>
+			</figcaption>
+		</figure>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Нисходящий процесс анализа</h2>
+		<ul>
+			<li>Java-потоки с именем <b><u>Thread-*</u></b> потребляют <b>CPU</b>, память</li>
+			<li>Модуль <b><u>ru.raiffeisen.report</u></b> потребляет <b>CPU</b>, память</li>
+			<li>Класс <b>ru.raiffeisen.report.<u>PdfReport</u></b> потребляет <b>CPU</b>, память</li>
+			<li>Метод <b>ru.raiffeisen.report.PdfReport.<u>Print</u></b> потребляет <b>CPU</b></li>
+		</ul>		
+		<figure>
+			<img class="place bottom center"
+				style="height:25%; margin: 20px 0px 50px 0"
+				src="images/Monitoring.Sampler.HTTP.X.7.SJK.2.png">				
+		</figure>		
+	</div></section>	
+
+	<section class="slide"><div>
+		<h2>Профилирование JVM</h2>
+		<h3>Графический результат работы профайлера</h3>
+		<figure>
+			<img class="w cover place bottom center" 
+				src="images/Monitoring.Sampler.HTTP.X.7.SJK.2.png">		
+		</figure>
+	</div></section>	
+
+	<section class="clear slide"><div>
+		<h2>Профилирование JVM</h2>
+		<h3>Текстовый результат работы профайлера</h3>		
+		<figure>
+			<img class="w cover place bottom center" src="images/SJK.Text.png">
+		</figure>
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout">
+		<ol>Задача
+			<li>Профилировать и мониторить бесплатно.</li>
+			<li>Автоматически запускать профилирование.</li>
+			<li>Отображать тренды по метрикам:
+				<ul>
+					<li>количество объектов в памяти;</li>
+					<li>длительность работы методов;</li>
+					<li>производительность потоков;</li>
+					<li>мониторинг системы.</li>
+				</ul>
+			</li>
+		</ol>
+	</h2>
+	</div></section>	
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Мониторить и профилировать</b> Java 8 бесплатно<br/>
+			<span class="next">Какую версию Java и профайлер выбрать?</span></h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Версии Oracle Java 8 и Open JDK</h2>
+		<h3>Oracle Java 8 (≤ <mark>8u202</mark> — органичения лицензии)</h3>
+		<pre>
+			<code>java version "1.8.0_201"</code>
+			<code>Java(TM) SE Runtime Environment (build 1.8.0_201-b09)</code>
+			<code>Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)</code>
+		</pre>
+		<h3>OpenJDK 8 (самая новая версия)</h3>
+		<pre>
+			<code>openjdk version "1.8.0_212"</code>
+			<code>OpenJDK Runtime Environment (build 1.8.0_212-b04)</code>
+			<code>OpenJDK 64-Bit Server VM (build 25.212-b04, mixed mode)</code>			
+		</pre>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Мониторить и профилировать бесплатно</h2>
+		<h3>Oracle Java 8 (≤ <mark>8u202</mark>)</h3>
+		<pre>
+			<code>InfluxDB, Telegraf, Jolokia</code>
+			<code>SJK (Swith Java Knife)</code>
+			<code>JFR (Java Fligth Recorder, <mark>на тестовом стенде</mark>)</code>
+		</pre>
+		<h3>OpenJDK 8</h3>
+		<pre>
+			<code>InfluxDB, Telegraf, Jolokia</code>
+			<code>SJK (Swith Java Knife)</code>
+		</pre>
+	</div></section>
+
+
+	<section class="slide"><div>
+		<h2>Grafana</h2>
+		<ul>
+			<li>Визуализация в виде таблиц и графиков</li>
+			<li>Столбчатые диаграммы</li>
+		</ul>		
+		<figure>
+			<img class="place bottom center"
+				style="height:25%; margin: 20px 0px 50px 0"
+				src="images/grafana.png">				
+		</figure>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>InfluxDB</h2>
+		<ul>
+			<li>Единое хранилище метрик с фильтрацией по времени и тегам</li>
+			<li>Формат InfluxLine просто создать из txt/csv/json с помощью awk</li>
+			<li>Аналические функции:
+				<ul>
+					<li>группировки: sum, count, max, mean, percentile</li>
+					<li>производные: last() + non_negative_derivative</li>
+				</ul>
+			</li>
+		</ul>		
+		<figure>
+			<img class="place bottom center"
+				style="height:25%; margin: 20px 0px 50px 0"
+				src="images/grafana.png">				
+		</figure>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Telegraf</h2>
+		<ul>
+			<li>Метрики по 
+				<ul>
+					<li>инфраструктуре: haproxy, postgresql_extensible, rabbitmq</li>
+					<li>системе: <mark>cpu</mark>, disk, diskio, kernel, mem, processes, swap</li>
+					<li>процессам: <mark>procstat</mark></li>
+					<li>java: <mark>jolokia2</mark></li>
+				</ul></li>
+			<li>Автоматизация профилирования Java
+				<ul>
+					<li>из консоли: <mark>exec</mark> (+ bash, sjk, awk)</li>
+				</ul>
+			</li>
+		</ul>				
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>SJK: Swiss Java Knife</h2>
+		Статистика по работе Java Virtual Machine:
+		<ul>
+			<li>активности потоков</li>
+			<li>активности методов</li>
+			<li>количеству объектов в памяти</li>
+		</ul>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>JFR: Java Fligth Recorder</h2>
+		Статистика по работе Java Virtual Machine:
+		<ul>
+			<li>скорости создания объектов в памяти</li>
+			<li>работе сборщика мусора</li>
+			<li>количеству исключений</li>
+			<li>блокировкам</li>
+		</ul>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>AWK</h2>
+		<ul>
+			<li>Удобно для превращения текста в статистику</li>
+			<li>Удобно парсить простые csv-файлы</li>
+			<li><a href="https://www.code-r.ru/wp-content/uploads/2018/10/4_Log.analyse.at_.the_.command.line_.pdf">Визуализация логов. Наука видеть иначе</a></li>
+		</ul>		
+	</div></section>
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout"><b>Мониторить и профилировать</b> Java 8 бесплатно<br/>
+			<span class="next">помогают:<ul>
+				<li><b>TIG</b> (Telegraf, InfluxDB, Grafana)</li>
+				<li><b>SJK</b> для профилирования</li>
+				<li><b>JFR</b> для исключений</li>
+				<li><b>AWK</b> для конвертации</li>
+			</ul></span></h2>
+	</div></section>
+
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Запустить <b>SJK</b> для профилирования  
+			<ul>
+				<li>и памяти (<b>hh</b>)</li>
+				<li>и кода (<b>stcap</b>)</li>
+			</ul>
+		</h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить профилирование памяти (<b>sjk hh</b>)</h2>
+		<h3>Подключение только по PID</h3>
+		<pre>
+			<code>> java -jar sjk.jar --help hh</code>
+			<code>Usage: hh [options]</code>
+			<code>    -p, --pid</code>
+			<code>       <mark>JVM process PID</mark></code>		
+		</pre>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить профилирование кода (<b>sjk stcap</b>)</h2>
+		<h3>Подключение по PID или JMX</h3>
+		<pre>
+			<code>[Stack Capture] Dumps stack traces to file for further processing</code>
+			<code>Usage: stcap [options]</code>
+			<code>    -p, --pid</code>
+			<code>       <mark>JVM process PID</mark></code>
+			<code>    -s, --socket</code>
+			<code>       Socket address for JMX port (host:port)</code>
+			<code>    --user</code>
+			<code>       User for JMX authentication (only for socket connection)</code>
+		</pre>
+	</div></section>
+
+
+	<section class="slide"><div>
+		<h2>Запустить профилирование (<b>sjk hh + stcap</b>)</h2>
+		<h3>Подключение по PID требует совпадения UID</h3>
+		<pre>
+			<code>> <mark>sudo -u user</mark> java -jar sjk.jar hh    --pid <mark class="green">$PID</mark></code>
+			<code>> <mark>sudo -u user</mark> java -jar sjk.jar stcap --pid <mark class="green">$PID</mark></code>
+		</pre>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить профилирование (<b>sjk hh + stcap</b>)</h2>
+
+		<h3>Профилирование требует наличия JDK</h3>
+		<pre>
+			<code>> JAVA=/opt/jdk1.8.0_201/bin/java</code>
+		</pre>
+		<pre>
+			<code>> yum install java-1.8.0-openjdk-devel.x86_64</code>
+			<code>> JAVA=`ls -l /etc/alternatives/java |  \
+        sed '<mark>s|.* -> ||</mark>' | sed '<mark>s|/jre||</mark>'`</code>
+		</pre>
+		<pre>
+			<code>> <mark>sudo -u user</mark> <mark class="green">$JAVA</mark> -jar sjk.jar hh    --pid <mark class="green">$PID</mark></code>
+			<code>> <mark>sudo -u user</mark> <mark class="green">$JAVA</mark> -jar sjk.jar stcap --pid <mark class="green">$PID</mark></code>
+		</pre>		
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Запустить <b>SJK</b> для нужного java-процесса</h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b> для нужного java-процесса</h2>
+		<h3>Найти PID по командной строке с <mark>pgrep</mark></h3>
+
+		<pre>
+			<code>> pgrep -fa "java"</code>
+			<code><mark class="green">9044</mark>   /usr/lib/jvm/<mark>java</mark>-1.11.0-openjdk-amd64/bin/<mark>java</mark> -Dmaven.multiModuleProjectDirectory=/home/user/Project/github.com/jvm.profiling.automation -Dmaven.home=/snap/intellij-idea-community/169/plugins/maven/lib/maven3 -Dclassworlds.conf=/snap/intellij-idea-community/169/plugins/maven/lib/maven3/bin/m2.conf</code>
+			<code><mark class="green">9077</mark>   <mark>java</mark> -Xms256M -Xmx1024M <mark class="green">-jar ApacheJMeter-5.1.1.jar</mark> -d /home/user/Project/github.com/jvm.profiling.automation/target/jmeter</code>
+		</pre>
+
+		<pre class="next">
+			<code>> pgrep -f "^java .*-jar ApacheJMeter" <mark class="next">-u user</mark></code>
+			<code><mark class="green">9077</mark></code>
+		</pre>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b> для нужного java-процесса</h2>
+		<h3>Найти PID c использованием <mark>JPS</mark></h3>
+
+		<pre>
+			<code>> java -jar sjk.jar jps</code>
+			<code>9044    org.codehaus.classworlds.Launcher -Didea.version2019.2.1 com.lazerycode.jmeter:jmeter-maven-plugin:2.8.6:jmeter -P Core</code>
+			<code><mark class="green">9077</mark>    <mark>ApacheJMeter-5.1.1.jar</mark> -d /home/user/Project/github.com/jvm.profiling.automation/target/jmeter -j /home/user/Project/github.com/jvm.profiling.automation/target/jmeter/logs/Core.jmx.log -l /home/user/Project/github.com/jvm.profiling.automation/target/jmeter/results/Core-2019-09-06_12-10-39.csv -n -t /home/x1337/Project/github.com/jvm.profiling.automation/target/jmeter/testFiles/Core.jmx -L ERROR</code>
+			<code>9500    sjk.jar jps</code>
+		</pre>
+
+		<pre class="next">
+			<code>> java -jar sjk.jar jps \</code>
+			<code>>     --filter-description "ApacheJMeter*" \</code>
+			<code>>     --process-details PID</code>
+			<code><mark class="green">9077</mark></code>
+		</pre>		
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b> для нужного java-процесса</h2>
+		<h3>Найти PID c использованием <mark>JPS</mark> (с UID)</h3>
+
+		<pre>
+			<code>> <mark>sudo -u user</mark> java -jar sjk.jar jps \</code>
+			<code>>     --filter-description "ApacheJMeter*" \</code>
+			<code>>     --process-details PID</code>
+			<code><mark class="green">9077</mark></code>
+		</pre>		
+	</div></section>
+
+
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Из <b>SJK</b> (<b>hh</b>) в InfluxDB</span></h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Из <b>SJK</b> (<b>hh</b>) в InfluxDB</h2>
+		<h3>Пример вывода команды <b>hh</b></h3>
+		<pre>
+			<code>> java -jar sjk.jar hh --live --pid $PID</code>
+			<code>   #   Instances       Bytes  Type</code>
+			<code>   1:      30000     3330000  [C</code>
+			<code>   2:      40000      220000  java.lang.String</code>
+			<code>   3:       7000      111111  java.lang.Class</code>
+			<code>   4:      15000       50000  ru.raiff.util.test.Map$Node</code>
+			<code><mark>Total</mark>      92000     3711111</code>
+		</pre>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Из <b>SJK</b> (<b>hh</b>) в InfluxDB</h2>
+		<h3>Необходимый формат результата</h3>
+		<table>
+			<col width="40%">
+			<tr>
+				<th>Type</th>
+				<th>g1</th>
+				<th>g2</th>
+				<th>g3</th>
+				<th>Count</th>
+				<th>Bytes</th>
+			</tr>
+			<tr>
+				<td>char[]</td>
+				<td>-</td>
+				<td>-</td>
+				<td>-</td>
+				<td>30000</td>
+				<td>3330000</td>
+			</tr>
+			<tr>
+				<td>java.lang.String</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>40000</td>
+				<td>220000</td>
+			</tr>			
+			<tr>
+				<td>java.lang.Class</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>7000</td>
+				<td>111111</td>
+			</tr>
+			<tr>
+				<td>ru.raiff.util.test.Map$Node</td>
+				<td>ru</td>
+				<td>raiff</td>
+				<td>util</td>
+				<td>15000</td>
+				<td>50000</td>
+			</tr>
+			<tr>
+				<td><mark>Total</mark></td>
+				<td>-</td>
+				<td>-</td>
+				<td>-</td>
+				<td>92000</td>
+				<td>3711111</td>
+			</tr>					
+		</table>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Из <b>SJK</b> (<b>hh</b>) в InfluxDB</h2>
+		<h3>Необходимый формат результата</h3>
+		<table>
+			<col width="40%">
+			<tr>
+				<th>Type</th>
+				<th>g1</th>
+				<th>g2</th>
+				<th>g3</th>
+				<th>Count</th>
+				<th>Bytes</th>
+			</tr>
+			<tr>
+				<td>char[]</td>
+				<td>-</td>
+				<td>-</td>
+				<td>-</td>
+				<td>30000</td>
+				<td>3330000</td>
+			</tr>
+			<tr>
+				<td>java.lang.String</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>40000</td>
+				<td>220000</td>
+			</tr>			
+			<tr>
+				<td>java.lang.Class</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>7000</td>
+				<td>111111</td>
+			</tr>
+			<tr>
+				<td>ru.raiff.util.test.Map$Node</td>
+				<td>ru</td>
+				<td>raiff</td>
+				<td>util</td>
+				<td>15000</td>
+				<td>50000</td>
+			</tr>		
+		</table>
+		<mark>Total.Count=92000, Total.Bytes=3711111</mark>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Из <b>SJK</b> (<b>hh</b>) в InfluxDB</h2>
+		<h3>Необходимый формат результата</h3>
+		<table>
+			<col width="40%">
+			<tr>
+				<th>Type</th>
+				<th>g1</th>
+				<th>g2</th>
+				<th>g3</th>
+				<th>Count</th>
+				<th>Bytes</th>
+				<th><mark>%C</mark></th>
+				<th><mark class="green">%B</mark></th>
+			</tr>
+			<tr>
+				<td>char[]</td>
+				<td>-</td>
+				<td>-</td>
+				<td>-</td>
+				<td>30000</td>
+				<td>3330000</td>
+				<td><mark>32.6</mark></td>
+				<td><mark class="green">89.7</mark></td>
+			</tr>
+			<tr>
+				<td>java.lang.String</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>40000</td>
+				<td>220000</td>
+				<td><mark>43.4</mark></td>
+				<td><mark class="green">5.9</mark></td>
+			</tr>			
+			<tr>
+				<td>java.lang.Class</td>
+				<td>java</td>
+				<td>lang</td>
+				<td>-</td>
+				<td>7000</td>
+				<td>111111</td>
+				<td><mark>7.6</mark></td>
+				<td><mark class="green">2.9</mark></td>
+			</tr>
+			<tr>
+				<td>ru.raiff.util.test.Map$Node</td>
+				<td>ru</td>
+				<td>raiff</td>
+				<td>util</td>
+				<td>15000</td>
+				<td>50000</td>
+				<td><mark>16.3</mark></td>
+				<td><mark class="green">1.3</mark></td>
+			</tr>		
+		</table>
+		Total.Count=92000, Total.Bytes=3711111
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Из <b>SJK</b> (<b>stcap</b> + <b>ssa</b>) в InfluxDB</span></h2>
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Запустить <b>SJK</b>, используя <b>bash</b></span></h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b>, используя <b>bash</b></h2>
+		<h3>Отправлять метрики, пока приложение работает</h3>
+		<pre>
+			<code>while [ -n <mark class="green">$PID</mark> ]</code>
+			<code>do</code>
+			<code>   $java -jar sjk.jar hh --live --pid $PID <mark>|</mark> \</code>
+			<code>   awk   -v app=JMeter -v n=30 -f sjk.hh.2.influx.awk <mark>|</mark> \</code>
+			<code>   curl  -i -XPOST http://influxHost:8086/write?db=sjk  \</code>
+			<code>         --data-binary @-</code>
+			<code>   <mark>sleep 30.0</mark></code>
+			<code>   <mark class="green">PID</mark>=`pgrep -f "^java .*-jar ApacheJMeter"`</code>
+			<code>done</code>
+		</pre>
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			Запустить <b>SJK</b>, используя <b>Telegraf</b></span></h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b>, используя <b>Telegraf</b></h2>
+		<h3>В telegraf.conf добавляем <mark>inputs.exec</mark></h3>
+		<pre>
+			<code><mark>[[inputs.exec]]</mark></code>
+			<code>    commands = [</code>
+			<code>        <mark class="green">"/opt/sjk/sjk.hh.sh"</mark></code>
+			<code>    ]</code>
+			<code>    timeout = "30s"</code>
+			<code>    interval = "60s"</code>
+			<code>    data_format = "influx"</code>
+		</pre>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2>Запустить <b>SJK</b>, используя <b>Telegraf</b></h2>
+		<h3>В командном файле парсим и отправляем</h3>
+		<figure>
+			<img class="w cover place bottom center" 
+				src="images/awk.2.influx.sh.png">		
+		</figure>
+	</div></section>
+
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout"><b>Автоматически</b> запускать профилирование<br/>
+			<ul>
+				<li><b>SJK</b> (<b>stcap</b> и <b>hh</b>) подключать к JVM по <b>PID</b></li>
+				<li><b>SJK</b> (<b>jps</b>) или <b>pgrep</b> для поиска <b>PID</b></li>
+				<li><b>root</b> и <b>sudo -u</b> для смены пользователя</li>
+				<li><b>AWK</b> для конвертации в формат <b>influxline</b></li>
+				<li><b>Telegraf</b> и <b>exec</b> для автоматизации запуска</li>
+			</ul>
+		</span></h2>
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout">Отображать тренды по метрикам<br/>
+			<ul>
+				<li><b>SJK</b> (<b>hh</b>): количество объектов в памяти</li>
+			</ul>
+		</span></h2>
+	</div></section>
+
+	<section class="slide"><div>
+		<h2><b>SJK</b> (<b>hh</b>): количество объектов в памяти</h2>
+		<h3>Столбчатые диаграммы и фильтры</h3>
+		<figure>
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/iOrH8QtxYQ8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+		</figure>
+				<a href="https://youtu.be/iOrH8QtxYQ8">youtu.be</a>,
+				<a href="https://snapshot.raintank.io/dashboard/snapshot/Z14um64K8svrWOWQl3M7yX0hdKdrM1fj?orgId=2">snapshot.raintank.io</a>		
+	</div></section>
+<!--
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout">Отображать тренды по метрикам<br/>
+			<ul>
+				<li><b>SJK</b> (<b>ssa</b>): длительность работы методов</li>
+			</ul>
+		</span></h2>
+	</div></section>
+
+	<section class="clear yellow slide"><div>
+		<h2 class="small shout">Отображать тренды по метрикам<br/>
+			<ul>
+				<li><b>SJK</b> (<b>ssa</b>): производительность потоков</li>
+			</ul>
+		</span></h2>
+	</div></section>
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout">Отображать тренды по метрикам<br/>
+			<ul>
+				<li>используя столбчатые диаграммы <b>Grafana</b></li>
+				<li>фильтруя по потокам в <b>SJK</b> (<b>ssa --thread-name</b>)</li>
+				<li>группируя статистику в <b>SJK</b> (<b>ssa --categorize</b>)</li>
+				<li>группируя статистику в <b>AWK</b> (для потоков)</li>
+			</ul>
+		</span></h2>
+	</div></section>
+-->
+	<section class="clear green slide"><div>
+		<h2 class="small shout">Профилирование помогает находить дефекты</h2>
+	</div></section>
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout">Тренды упрощают процесс исправления дефектов</h2>
+	</div></section>
+
+	<section class="clear green slide"><div>
+		<h2 class="small shout">Пример проекта<br>
+			https://github.com/polarnik/jvm.profiling.automation
+		</h2>
+	</div></section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	<section class="clear slide" id="contacts"><div>
+		<h3>Вячеслав Смирнов</h3>
+		<p><a href="https://github.com/polarnik">github.com/polarnik</a></p>
+		<p>Telegram: @qa_load</p>
+		<div><span></span><h2>Спасибо!</h2></div>
+		<img class="cover w" src="images/raiff-cover.png">
+		<style>
+			#contacts h3 {
+				position: relative;
+				top: calc(var(--slide-height) / 2.7);
+				left: calc(var(--slide-width) / 12);
+				font-size: calc(var(--slide-height) / 15);
+				padding: 0px 0 0 0;
+				margin: 40px 0 0 0;
+			}			
+			#contacts h2 {
+				position: relative;
+				top: calc(var(--slide-height) / 2.7);
+				left: calc(var(--slide-width) / 12);
+				font-size: calc(var(--slide-height) / 15);
+			}
+			#contacts p {
+				position: relative;
+				top: calc(var(--slide-height) / 2.7);
+				left: calc(var(--slide-width) / 12);
+				font-size: calc(var(--slide-height) / 15);
+
+			}
+			#contacts div div {
+				width: calc(var(--slide-width) / 4);
+				height: calc(var(--slide-width) / 4);
+				position: absolute;
+				top: calc(var(--slide-height) / 4);
+				left: calc(var(--slide-width) * (8/9 - 1/4));
+				background: #ffed00;
+				border-radius: 50%;
+				white-space: nowrap;
+				text-align: center;
+				vertical-align: middle;
+			}
+			#contacts div div span {
+				display: inline-block;
+				height: 90%;
+				vertical-align: middle;
+			}
+			#contacts div div h2 {
+				z-index: auto;
+				vertical-align: middle;
+				position: static;
+				display: inline-block;
+				margin-bottom: 0;
+				color: #000;
+			}
+		</style>
+	</div></section>
+
+	<div class="progress"></div>
+
+	<script src="shower/shower.min.js"></script>
+</body>
+</html>
